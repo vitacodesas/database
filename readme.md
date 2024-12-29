@@ -5,23 +5,25 @@ Este paquete para Laravel permite exportar la estructura de una base de datos y 
 
 ## Instalación
 
-1. **Instalar el paquete usando Composer**:
+1. **Agregarlo en el composer.json
+
+```json
+"repositories": [
+    {
+        "type": "vcs",
+        "url": "https://github.com/vitacodesas/database"
+    }
+]
+```
+
+2. **Instalar el paquete usando Composer**:
 
    Para instalar el paquete, ejecuta el siguiente comando en la raíz de tu proyecto Laravel:
 
    ```bash
    composer require vitacode/database
    ```
-## Agregarlo en el composer.json
 
-```json
-"repositories": [
-    {
-        "type": "vcs",
-        "url": "https://github.com/tu-usuario/vitacode-database"
-    }
-]
-```
 
 
 
