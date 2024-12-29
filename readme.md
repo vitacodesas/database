@@ -14,6 +14,17 @@ Este paquete para Laravel permite exportar la estructura de una base de datos y 
    ```
 ## Agregarlo en el composer.json
 
+```json
+"repositories": [
+    {
+        "type": "vcs",
+        "url": "https://github.com/tu-usuario/vitacode-database"
+    }
+]
+```
+
+
+
 <!-- 2. **Publicar el archivo de configuración** (si es necesario):
 
    Si deseas personalizar las configuraciones del paquete, puedes publicar el archivo de configuración con el siguiente comando:
