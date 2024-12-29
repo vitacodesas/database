@@ -81,7 +81,7 @@ Error: La importación solo está permitida desde localhost.
 
 - **Limitación de 1000 registros**: El paquete está diseñado para exportar un máximo de 1000 registros por tabla. Si deseas exportar más registros, deberás modificar el código del paquete o adaptar el proceso de exportación a tus necesidades.
 
-- **Compatibilidad de Base de Datos**: Este paquete es compatible con bases de datos que Laravel soporta de forma predeterminada (MySQL, PostgreSQL, SQLite, etc.).
+- **Compatibilidad de Base de Datos**: Este paquete es compatible con bases de datos que Laravel soporta de forma predeterminada (MySQL).
 
 - **Exportación de Estructura**: La exportación incluye la estructura de las tablas, pero no las relaciones entre ellas. Si necesitas exportar relaciones complejas (por ejemplo, claves foráneas), deberás adaptar el código.
 
