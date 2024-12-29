@@ -12,6 +12,7 @@ Este paquete para Laravel permite exportar la estructura de una base de datos y 
    ```bash
    composer require vitacode/database
    ```
+## Agregarlo en el composer.json
 
 <!-- 2. **Publicar el archivo de configuración** (si es necesario):
 
