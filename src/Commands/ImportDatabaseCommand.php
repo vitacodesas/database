@@ -28,7 +28,7 @@ class ImportDatabaseCommand extends Command
             $host = config('database.connections.op.host');
 
             // validar que el host no tenga .
-            if (strpos($host, '.') !== false) {
+            if (strpos($host, '.') !== false || $host != 'localhost') {
                 $this->error("El host debe ser una dirección local.");
                 return false;
             }
