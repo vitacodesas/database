@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Storage;
 
 class ImportDatabaseCommand extends Command
 {
-    protected $signature = 'db:import {--path=database/exports : Ruta de los archivos de exportación}';
+    protected $signature = 'db:import {--path=database/exports : Ruta de los archivos de exportación} {--conection=mysql : Conexión de la base de datos}';
     protected $description = 'Importa las tablas y datos desde archivos SQL separados';
 
     public function __construct()
@@ -24,8 +24,10 @@ class ImportDatabaseCommand extends Command
     public function handle()
     {
         try {
-            $inputPath = $this->option('path') ?? 'database/exports';
-            $host = config('database.connections.op.host');
+            $inputPath = $this->option('path');
+            $connName = $this->option('conection');
+
+            $host = config("database.connections.{$connName}.host");
 
             // validar que el host no tenga .
             if (strpos($host, '.') !== false || $host != 'localhost') {
