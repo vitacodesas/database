@@ -8,9 +8,14 @@ use Illuminate\Support\Facades\Storage;
 
 class ExportDatabaseCommand extends Command
 {
-    protected $signature = 'db:export {--path=database/exports : Ruta donde guardar los archivos} {--conection=mysql : Conexión de la base de datos}';
+    protected $signature = 'db:export 
+                                {--path=database/exports : Ruta donde guardar los archivos} 
+                                {--conection=mysql : Conexión de la base de datos}
+                                {--limitData=1000 : Cantidad de datos a exportar por tabla}';
+
     protected $description = 'Exporta la base de datos en archivos separados para cada tabla (estructura y datos)';
 
+    private $db;
     public function __construct()
     {
         parent::__construct();
@@ -26,7 +31,6 @@ class ExportDatabaseCommand extends Command
         try {
             //code...
             $outputPath = $this->option('path');
-
             $connName = $this->option('conection');
 
 
@@ -48,23 +52,25 @@ class ExportDatabaseCommand extends Command
 
             $database = config("database.connections.{$connName}.database");
 
-            $tables = DB::select("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'", [$database]);
+            $this->db = DB::connection($connName);
+
+            $tables = $this->db->select("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'", [$database]);
 
 
             // exportar stored procedures
-            $procedures = DB::select("SHOW PROCEDURE STATUS WHERE Db = ?", [$database]);
+            $procedures = $this->db->select("SHOW PROCEDURE STATUS WHERE Db = ?", [$database]);
             foreach ($procedures as $procedure) {
                 $procedureName = $procedure->Name;
-                $procedureDef = DB::select("SHOW CREATE PROCEDURE $procedureName")[0]->{'Create Procedure'};
+                $procedureDef = $this->db->select("SHOW CREATE PROCEDURE $procedureName")[0]->{'Create Procedure'};
                 $filePath = "$outputPath/procedures/$procedureName.sql";
                 Storage::put($filePath, $procedureDef . ";\n");
             }
 
             // exportar funciones
-            $functions = DB::select("SHOW FUNCTION STATUS WHERE Db = ?", [$database]);
+            $functions = $this->db->select("SHOW FUNCTION STATUS WHERE Db = ?", [$database]);
             foreach ($functions as $function) {
                 $functionName = $function->Name;
-                $functionDef = DB::select("SHOW CREATE FUNCTION $functionName")[0]->{'Create Function'};
+                $functionDef = $this->db->select("SHOW CREATE FUNCTION $functionName")[0]->{'Create Function'};
                 $filePath = "$outputPath/functions/$functionName.sql";
                 Storage::put($filePath, $functionDef . ";\n");
             }
@@ -88,11 +94,7 @@ class ExportDatabaseCommand extends Command
                 }
             }
         } catch (\Throwable $th) {
-            dd([
-                'error' => $th->getMessage(),
-                'line' => $th->getLine(),
-                'file' => $th->getFile()
-            ]);
+            $this->error("Error: {$th->getMessage()} en la línea {$th->getLine()} del archivo {$th->getFile()}");
         }
         $this->info("Exportación completada. Archivos guardados en $outputPath.");
     }
@@ -100,21 +102,21 @@ class ExportDatabaseCommand extends Command
 
     protected function exportTableStructure($tableName, $outputPath)
     {
-        $structure = DB::select("SHOW CREATE TABLE `$tableName`")[0]->{'Create Table'};
+        $structure = $this->db->select("SHOW CREATE TABLE `$tableName`")[0]->{'Create Table'};
         $filePath = "$outputPath/tables/$tableName-structure.sql";
         Storage::put($filePath, $structure . ";\n");
     }
 
     protected function getPrimaryKey($tableName)
     {
-        $indexInfo = DB::select("SHOW KEYS FROM `$tableName` WHERE Key_name = 'PRIMARY'");
+        $indexInfo = $this->db->select("SHOW KEYS FROM `$tableName` WHERE Key_name = 'PRIMARY'");
         return $indexInfo[0]->Column_name ?? null; // Suponer 'id' si no hay clave primaria
     }
 
     protected function getFirstColumn($tableName)
     {
         // Obtener la primera columna de la tabla usando SHOW COLUMNS
-        $columns = DB::select("SHOW COLUMNS FROM `$tableName`");
+        $columns = $this->db->select("SHOW COLUMNS FROM `$tableName`");
         return $columns[0]->Field ?? null;
     }
 
@@ -122,13 +124,14 @@ class ExportDatabaseCommand extends Command
     protected function exportTableData($tableName, $outputPath)
     {
         $filePath = "$outputPath/data/data-$tableName.sql";
+        $limitData = $this->option('limitData');
 
         // Determinar la columna para ordenar
         $orderColumn = $this->getPrimaryKey($tableName) ?? $this->getFirstColumn($tableName);
         
-        $rows = DB::table($tableName)
+        $rows = $this->db->table($tableName)
         ->orderBy($orderColumn)
-        ->limit(1000)->get();
+        ->limit($limitData)->get();
         
         $inserts = [];
         foreach ($rows as $row) {

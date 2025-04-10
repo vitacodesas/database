@@ -8,9 +8,10 @@ use Illuminate\Support\Facades\Storage;
 
 class ImportDatabaseCommand extends Command
 {
-    protected $signature = 'db:import {--path=database/exports : Ruta de los archivos de exportación} {--conection=mysql : Conexión de la base de datos}';
+    protected $signature = 'db:import {--path=database/exports : Ruta de los archivos de exportación}
+                                     {--conection= : Conexión de la base de datos}';
     protected $description = 'Importa las tablas y datos desde archivos SQL separados';
-
+    private $db;
     public function __construct()
     {
         parent::__construct();
@@ -26,6 +27,12 @@ class ImportDatabaseCommand extends Command
         try {
             $inputPath = $this->option('path');
             $connName = $this->option('conection');
+
+            if (!isset($connName) || empty($connName)) {
+                $this->error("EL parámetro --conection es obligatorio.");
+                return false;
+            }
+
 
             $host = config("database.connections.{$connName}.host");
 
@@ -51,8 +58,10 @@ class ImportDatabaseCommand extends Command
 
             $this->info("Importando base de datos desde $inputPath...");
 
+            $this->db = $this->db->connection($connName);
+
             // Desactivar temporalmente las claves foráneas
-            DB::statement('SET FOREIGN_KEY_CHECKS = 0;');
+            $this->db->statement('SET FOREIGN_KEY_CHECKS = 0;');
 
             // Importar la estructura de las tablas
             $this->importTableStructures("$inputPath/tables");
@@ -64,7 +73,7 @@ class ImportDatabaseCommand extends Command
             $this->importStoredProcedures("$inputPath/procedures");
 
             // Reactivar las claves foráneas
-            DB::statement('SET FOREIGN_KEY_CHECKS = 1;');
+            $this->db->statement('SET FOREIGN_KEY_CHECKS = 1;');
 
             $this->info("Importación completada.");
             return true;
@@ -77,7 +86,7 @@ class ImportDatabaseCommand extends Command
     protected function existTable($tableName)
     {
         try {
-            DB::table($tableName)->first();
+            $this->db->table($tableName)->first();
             return true;
         } catch (\Throwable $th) {
             return false;
@@ -107,8 +116,8 @@ class ImportDatabaseCommand extends Command
             if ($this->existTable($tableName)) {
                 throw new \Exception("La tabla $tableName ya existe, recomendamos limpiar toda el schema antes de importar.");
             }
-            DB::unprepared("DROP TABLE IF EXISTS `$tableName`");
-            DB::unprepared($sql);
+            $this->db->unprepared("DROP TABLE IF EXISTS `$tableName`");
+            $this->db->unprepared($sql);
         }
     }
 
@@ -127,7 +136,7 @@ class ImportDatabaseCommand extends Command
         foreach ($files as $file) {
             $this->info("Importando datos desde $file...");
             $sql = Storage::get($file);
-            DB::unprepared($sql);
+            $this->db->unprepared($sql);
         }
     }
 
@@ -144,7 +153,7 @@ class ImportDatabaseCommand extends Command
         foreach ($files as $file) {
             $this->info("Importando procedimiento almacenado desde $file...");
             $sql = Storage::get($file);
-            DB::unprepared($sql);
+            $this->db->unprepared($sql);
         }
     }
 
@@ -159,7 +168,7 @@ class ImportDatabaseCommand extends Command
         foreach ($files as $file) {
             $this->info("Importando función almacenada desde $file...");
             $sql = Storage::get($file);
-            DB::unprepared($sql);
+            $this->db->unprepared($sql);
         }
     }
 }
