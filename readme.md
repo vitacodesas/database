@@ -89,6 +89,12 @@ Si deseas contribuir al desarrollo de este paquete, por favor sigue estos pasos:
 
 Este paquete es de código abierto y se distribuye bajo la licencia MIT.
 
+## Tag
+
+Crear tag
+git tag -a v1.0.0 -m "Primera versión estable"
+git push origin v1.0.0
+
 
 ## Versionamientos
 
@@ -96,3 +102,4 @@ Ejemplo de incremento de versión:
 1. Si tu paquete está en la versión 1.0.0 y agregas nuevas funcionalidades sin romper las anteriores, la siguiente versión sería 1.1.0.
 2. Si corriges errores pero no agregas nuevas funcionalidades, la siguiente versión sería 1.0.1.
 3. Si haces un cambio importante que no es compatible con versiones anteriores, la siguiente versión sería 2.0.0.
+
