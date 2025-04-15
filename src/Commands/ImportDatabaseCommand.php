@@ -34,22 +34,6 @@ class ImportDatabaseCommand extends Command
             }
 
 
-            $host = config("database.connections.{$connName}.host");
-
-            // validar que el host no tenga .
-            if (strpos($host, '.') !== false || $host != 'localhost') {
-                $this->error("El host debe ser una dirección local.");
-                return false;
-            }
-
-            // si la db no existe crearla
-            // $db = config('database.connections.mysql.database');
-            // $username = config('database.connections.mysql.username');
-            // $password = config('database.connections.mysql.password');
-            // $port = config('database.connections.mysql.port');
-            // $command = "mysql -h $host -u $username -p$password -P $port -e 'CREATE DATABASE IF NOT EXISTS $db'";
-            // exec($command);
-
             // Verificar si el directorio existe
             if (!Storage::exists($inputPath)) {
                 $this->error("El directorio $inputPath no existe.");
