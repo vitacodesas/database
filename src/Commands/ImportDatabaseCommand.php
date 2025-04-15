@@ -56,6 +56,9 @@ class ImportDatabaseCommand extends Command
             // Importar los procedimientos almacenados
             $this->importStoredProcedures("$inputPath/procedures");
 
+            // Importar las funciones almacenadas
+            $this->importFunctions("$inputPath/functions");
+
             // Reactivar las claves foráneas
             $this->db->statement('SET FOREIGN_KEY_CHECKS = 1;');
 
@@ -137,7 +140,12 @@ class ImportDatabaseCommand extends Command
         foreach ($files as $file) {
             $this->info("Importando procedimiento almacenado desde $file...");
             $sql = Storage::get($file);
-            $this->db->unprepared($sql);
+            try {
+                $this->db->unprepared($sql);
+            } catch (\Throwable $th) {
+                $this->warn("Error al importar el procedimiento almacenado desde $file: {$th->getMessage()}");
+                continue;
+            }
         }
     }
 
@@ -152,7 +160,12 @@ class ImportDatabaseCommand extends Command
         foreach ($files as $file) {
             $this->info("Importando función almacenada desde $file...");
             $sql = Storage::get($file);
-            $this->db->unprepared($sql);
+            try {
+                $this->db->unprepared($sql);
+            } catch (\Throwable $th) {
+                $this->warn("Error al importar la función almacenada desde $file: {$th->getMessage()}");
+                continue;
+            }
         }
     }
 }
