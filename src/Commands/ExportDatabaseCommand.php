@@ -60,10 +60,14 @@ class ExportDatabaseCommand extends Command
             // exportar stored procedures
             $procedures = $this->db->select("SHOW PROCEDURE STATUS WHERE Db = ?", [$database]);
             foreach ($procedures as $procedure) {
-                $procedureName = $procedure->Name;
-                $procedureDef = $this->db->select("SHOW CREATE PROCEDURE $procedureName")[0]->{'Create Procedure'};
-                $filePath = "$outputPath/procedures/$procedureName.sql";
-                Storage::put($filePath, $procedureDef . ";\n");
+                try {
+                    $procedureName = $procedure->Name;
+                    $procedureDef = $this->db->select("SHOW CREATE PROCEDURE $procedureName")[0]->{'Create Procedure'};
+                    $filePath = "$outputPath/procedures/$procedureName.sql";
+                    Storage::put($filePath, $procedureDef . ";\n");
+                } catch (\Throwable $th) {
+                    $this->warn("Error al exportar el procedimiento almacenado {$procedure->Name}: {$th->getMessage()}");
+                }
             }
 
             // exportar funciones
