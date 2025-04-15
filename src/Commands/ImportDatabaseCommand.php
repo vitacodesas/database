@@ -42,7 +42,7 @@ class ImportDatabaseCommand extends Command
 
             $this->info("Importando base de datos desde $inputPath...");
 
-            $this->db = $this->db->connection($connName);
+            $this->db = DB::connection($connName);
 
             // Desactivar temporalmente las claves foráneas
             $this->db->statement('SET FOREIGN_KEY_CHECKS = 0;');
