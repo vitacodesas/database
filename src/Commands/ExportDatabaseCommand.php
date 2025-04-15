@@ -52,6 +52,7 @@ class ExportDatabaseCommand extends Command
 
             $database = config("database.connections.{$connName}.database");
 
+
             $this->db = DB::connection($connName);
 
             $tables = $this->db->select("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'", [$database]);
@@ -62,7 +63,15 @@ class ExportDatabaseCommand extends Command
             foreach ($procedures as $procedure) {
                 try {
                     $procedureName = $procedure->Name;
-                    $procedureDef = $this->db->select("SHOW CREATE PROCEDURE $procedureName")[0]->{'Create Procedure'};
+                    $procedureDef = $this->db->selectOne("SHOW CREATE PROCEDURE $procedureName");
+
+                    if (!isset($procedureDef->{'Create Procedure'})) {
+                        $this->warn("No se pudo obtener la definición del procedimiento almacenado {$procedure->Name}");
+                        continue;
+                    }
+                    $procedureDef = $procedureDef->{'Create Procedure'};
+                    // quitar definer
+                    $this->deleteDefiner($procedureDef);
                     $filePath = "$outputPath/procedures/$procedureName.sql";
                     Storage::put($filePath, $procedureDef . ";\n");
                 } catch (\Throwable $th) {
@@ -74,7 +83,13 @@ class ExportDatabaseCommand extends Command
             $functions = $this->db->select("SHOW FUNCTION STATUS WHERE Db = ?", [$database]);
             foreach ($functions as $function) {
                 $functionName = $function->Name;
-                $functionDef = $this->db->select("SHOW CREATE FUNCTION $functionName")[0]->{'Create Function'};
+                $functionDef = $this->db->selectOne("SHOW CREATE FUNCTION $functionName");
+                if (!isset($functionDef->{'Create Function'})) {
+                    $this->warn("No se pudo obtener la definición de la función {$function->Name}");
+                    continue;
+                }
+                $functionDef = $functionDef->{'Create Function'};
+                $this->deleteDefiner($functionDef);
                 $filePath = "$outputPath/functions/$functionName.sql";
                 Storage::put($filePath, $functionDef . ";\n");
             }
@@ -148,6 +163,15 @@ class ExportDatabaseCommand extends Command
         }
         $sql = "INSERT INTO `$tableName` VALUES " . implode(",\n", $inserts) . ";\n";
         Storage::append($filePath, $sql);
+    }
+
+
+    protected function deleteDefiner(&$sql)
+    {
+
+        // Eliminar la cláusula DEFINER de la definición del procedimiento
+        $sql = preg_replace('/DEFINER=`[^`]+`@`[^`]+`/', '', $sql);
+        
     }
 
     
